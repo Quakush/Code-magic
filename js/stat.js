@@ -1,83 +1,68 @@
-'use strict';
+var BEGIN_X = 170;
+var BEGIN_Y = 110;
+var SCALE = 1.5;
+var GAP = 10;
+var FONT_GAP = 80;
+var BAR_GAP = 40;
+var TEXT_WIDTH = 50;
+var BAR_WIDTH = 40;
+var BAR_MAX_HEIGHT = 100;
 
-var cloud = {
-  X: 100,
-  Y: 10,
-  WIDTH: 420,
-  HEIGHT: 270
-};
-
-var offset = {
-  CAPTION: 20,
-  SHADOW: 10,
-  COLUMN: 50,
-  TEXT: 10
-};
-
-var column = {
-  WIDTH: 40,
-  MAX_HEIGHT: 150
-};
-
-var renderCloud = function (ctx, x, y, color) {
+var renderCloud = function(ctx, x, y, color, scale) {
+  //ctx.fillStyle = color;
+  //ctx.fillRect(x, y, CLOUD_WIDTH, CLOUD_HEIGHT);
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.bezierCurveTo(-40,  20, -40,  70,  60,  70);
+  ctx.bezierCurveTo(80,  100, 150, 100, 170,  70);
+  ctx.bezierCurveTo(250,  70, 250,  40, 220,  20);
+  ctx.bezierCurveTo(260, -40, 200, -50, 170, -30);
+  ctx.bezierCurveTo(150, -75,  80, -60,  80, -30);
+  ctx.bezierCurveTo(30,  -75, -20, -60,   0,   0);
+  ctx.strokeStyle = 'lightgray';
   ctx.fillStyle = color;
-  ctx.fillRect(x, y, cloud.WIDTH, cloud.HEIGHT);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
 };
 
-var addText = function (ctx, text, x, y) {
-  ctx.font = '16px PT Mono';
+var renderText = function(ctx, text, x, y) {
+  ctx.font = '16px Arial';
   ctx.fillStyle = '#000';
   ctx.fillText(text, x, y);
 };
 
-var renderPlayerResultBar = function (ctx, x, y, height, color) {
+var renderResultBar = function(ctx, x, y, height, color) {
   ctx.fillStyle = color;
-  ctx.fillRect(x, y, column.WIDTH, height);
+  ctx.fillRect(x, y, BAR_WIDTH, height);
 };
 
-window.renderStatistics = function (ctx, names, times) {
-  renderCloud(ctx,
-      cloud.X + offset.SHADOW,
-      cloud.Y + offset.SHADOW,
-      'rgba(0, 0, 0, 0.7)'
-  );
-  renderCloud(ctx, cloud.X, cloud.Y, '#fff');
+var getMaxElement = function(arr) {
+  var maxElement = arr[0];
 
-  addText(ctx, 'Ура вы победили!', cloud.X + offset.CAPTION, cloud.Y + offset.CAPTION);
-  addText(ctx, 'Список результатов:', cloud.X + offset.CAPTION, cloud.Y + 2 * offset.CAPTION);
+  for (var i = 0; i < arr.length; i++) {
+    if (arr[i] > maxElement) {
+      maxElement = arr[i];
+    }
+  }
+  return maxElement;
+};
 
-  var maxGameTime = times.reduce(function (a, b) {
-    return Math.max(a, b);
-  });
+window.renderStatistics = function(ctx, names, times) {
+  renderCloud(ctx, BEGIN_X, BEGIN_Y, 'rgba(0, 0, 0, 0.3)', SCALE);
+  renderCloud(ctx, BEGIN_X - GAP, BEGIN_Y - GAP, '#fff', SCALE);
 
-  maxGameTime = Math.round(maxGameTime);
-
-  names.forEach(function (name, index) {
-    addText(
-        ctx,
-        name,
-        cloud.X + 2 * offset.TEXT + index * (column.WIDTH + offset.COLUMN),
-        cloud.Y + cloud.HEIGHT - offset.TEXT
-    );
-
-    var columnHeight = Math.round(Math.round(times[index]) * column.MAX_HEIGHT / maxGameTime);
-    var columnY = cloud.Y + cloud.HEIGHT - 4 * offset.TEXT - columnHeight;
-
-    renderPlayerResultBar(
-        ctx,
-        cloud.X + 2 * offset.TEXT + index * (column.WIDTH + offset.COLUMN),
-        columnY,
-        columnHeight,
-        name === 'Вы' ? 'rgba(255, 0, 0, 1)' : 'rgba(0, 0, 255, ' + Math.random() + ')'
-    );
-
-    addText(
-        ctx,
-        Math.round(times[index]),
-        cloud.X + 2 * offset.TEXT + index * (column.WIDTH + offset.COLUMN),
-        columnY - offset.TEXT
-    );
-
-  });
-
+  for (var i = 0; i < names.length; i++) {
+    var height = Math.round((times[i] * BAR_MAX_HEIGHT) / getMaxElement(times));
+    renderText(ctx, names[i], BEGIN_X + FONT_GAP*i, BEGIN_Y - GAP*3);
+    renderResultBar(
+      ctx,
+      BEGIN_X + (BAR_WIDTH + BAR_GAP)*i,
+      BEGIN_Y - GAP*2 + BAR_MAX_HEIGHT - height, height,
+      names[i] === 'Вы' ? 'red' : 'rgba(0, 0, 255, ' + Math.random() + ')'
+      );
+  }
 };
